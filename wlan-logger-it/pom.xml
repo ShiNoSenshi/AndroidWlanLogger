@@ -40,6 +40,11 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
         </dependency>
+	    <dependency>
+	      <groupId>com.google.android.maps</groupId>
+	      <artifactId>maps</artifactId>
+	      <version>15_r2</version>
+	    </dependency>
     </dependencies>
     <build>
         <plugins>

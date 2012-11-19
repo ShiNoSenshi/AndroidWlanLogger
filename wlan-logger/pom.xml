@@ -24,6 +24,11 @@
       <groupId>de.akquinet.android.androlog</groupId>
       <artifactId>androlog</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.google.android.maps</groupId>
+      <artifactId>maps</artifactId>
+      <version>15_r2</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

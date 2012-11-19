@@ -2,4 +2,7 @@
 <resources>
     <string name="hello">Hello wlan-logger!</string>
     <string name="app_name">wlan-logger</string>
+    <string name="on">On</string>
+    <string name="off">Off</string>
+    <string name="sync">Sync</string>
 </resources>

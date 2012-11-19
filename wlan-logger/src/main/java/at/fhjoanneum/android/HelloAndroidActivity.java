@@ -1,10 +1,13 @@
 package at.fhjoanneum.android;
 
-import android.app.Activity;
 import android.os.Bundle;
-import de.akquinet.android.androlog.Log;
+import android.util.Log;
+import at.fhjoanneum.android.constants.WlanLoggerConstants;
 
-public class HelloAndroidActivity extends Activity {
+import com.google.android.maps.MapActivity;
+import com.google.android.maps.MapView;
+
+public class HelloAndroidActivity extends MapActivity {
 
     /**
      * Called when the activity is first created.
@@ -16,14 +19,21 @@ public class HelloAndroidActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Initializes the logging
-        Log.init();
-
         // Log a message (only on dev platform)
-        Log.i(this, "onCreate");
+        Log.i(WlanLoggerConstants.TAG, "onCreate");
 
         setContentView(R.layout.main);
+        MapView mapView = (MapView) findViewById(R.id.mapview);
+        mapView.setBuiltInZoomControls(true);
+        
+        
     }
+
+	@Override
+	protected boolean isRouteDisplayed() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 
 }
 
