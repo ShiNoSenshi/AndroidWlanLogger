@@ -54,6 +54,12 @@ public class HelloAndroidActivity extends MapActivity {
 		isTrackingOn = !isTrackingOn;
 		return true;
 	}
+	
+	public boolean syncMap(View v) {
+		Log.i(WlanLoggerConstants.TAG, "Sync Map with Data.");
+		// TODO Auto-generated method stub
+		return true;
+	}
 
 	private void turnOnTracking() {
 		// TODO Auto-generated method stub
