@@ -9,7 +9,7 @@ import at.fhjoanneum.android.constants.WlanLoggerConstants;
 import com.google.android.maps.MapActivity;
 import com.google.android.maps.MapView;
 
-public class HelloAndroidActivity extends MapActivity {
+public class MainActivity extends MapActivity {
 
 	private boolean isTrackingOn = false;
 
