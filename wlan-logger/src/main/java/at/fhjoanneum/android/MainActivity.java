@@ -1,9 +1,13 @@
 package at.fhjoanneum.android;
 
+import java.util.Set;
+
+import android.net.wifi.ScanResult;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 import at.fhjoanneum.android.constants.WlanLoggerConstants;
 
 import com.google.android.maps.MapActivity;
@@ -12,6 +16,8 @@ import com.google.android.maps.MapView;
 public class MainActivity extends MapActivity {
 
 	private boolean isTrackingOn = false;
+	private WlanListenerThread wlanListener;
+	private OpenWlanCollector collector;
 
 	/**
 	 * Called when the activity is first created.
@@ -25,7 +31,9 @@ public class MainActivity extends MapActivity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
+		
+		setupWlanLogging();
+		
 		// Log a message (only on dev platform)
 		Log.i(WlanLoggerConstants.TAG, "onCreate");
 
@@ -33,12 +41,6 @@ public class MainActivity extends MapActivity {
 		MapView mapView = (MapView) findViewById(R.id.mapview);
 		mapView.setBuiltInZoomControls(true);
 
-	}
-
-	@Override
-	protected boolean isRouteDisplayed() {
-		// TODO Auto-generated method stub
-		return false;
 	}
 
 	public boolean switchState(View v) {
@@ -57,16 +59,51 @@ public class MainActivity extends MapActivity {
 	
 	public boolean syncMap(View v) {
 		Log.i(WlanLoggerConstants.TAG, "Sync Map with Data.");
-		// TODO Auto-generated method stub
+		Set<ScanResult> wlanList = collector.getOpenWlans().keySet();
+		if(!wlanList.isEmpty()) {
+			addWlansToMap(wlanList);
+			Toast.makeText(getApplicationContext(),
+					"Open wlans added to the map.", Toast.LENGTH_LONG)
+					.show();
+		} else {
+			Log.i(WlanLoggerConstants.TAG, "No openwlans in the set yet.");
+			Toast.makeText(getApplicationContext(),
+					"No open wlans found yet.", Toast.LENGTH_LONG)
+					.show();
+		}
 		return true;
 	}
 
-	private void turnOnTracking() {
+	private void addWlansToMap(Set<ScanResult> wlanList) {
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.append("This Wlans: \n");
+		for (ScanResult scanResult : wlanList) {
+			stringBuilder.append("SSID: ").append(scanResult.SSID).append(",\n");
+		}
+		stringBuilder.append("got added to the map.");
+		Log.i(WlanLoggerConstants.TAG, stringBuilder.toString());
+	}
+
+	@Override
+	protected boolean isRouteDisplayed() {
 		// TODO Auto-generated method stub
+		return false;
+	}
+
+	private void setupWlanLogging() {
+		collector = new OpenWlanCollector(this);
+		Thread collectorThread = new Thread(collector);
+		collectorThread.start();
+		wlanListener = new WlanListenerThread(this, collector);
+	}
+
+	private void turnOnTracking() {
+		Thread trackingThread = new Thread(wlanListener);
+		trackingThread.start();
 	}
 
 	private void turnOffTracking() {
-		// TODO Auto-generated method stub
+		wlanListener.setRunning(false);
 	}
 
 	private void changeOnOffButton(View v, boolean switchToOff) {
