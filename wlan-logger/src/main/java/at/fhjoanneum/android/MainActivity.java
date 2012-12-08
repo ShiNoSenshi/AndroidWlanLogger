@@ -1,8 +1,10 @@
 package at.fhjoanneum.android;
 
-import java.util.Set;
+import java.util.List;
+import java.util.Map;
 
-import android.net.wifi.ScanResult;
+import android.graphics.drawable.Drawable;
+import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -10,14 +12,18 @@ import android.widget.Button;
 import android.widget.Toast;
 import at.fhjoanneum.android.constants.WlanLoggerConstants;
 
+import com.google.android.maps.GeoPoint;
 import com.google.android.maps.MapActivity;
 import com.google.android.maps.MapView;
+import com.google.android.maps.Overlay;
+import com.google.android.maps.OverlayItem;
 
 public class MainActivity extends MapActivity {
 
 	private boolean isTrackingOn = false;
 	private WlanListenerThread wlanListener;
 	private OpenWlanCollector collector;
+	private WlanItemizedOverlay itemizedoverlay;
 
 	/**
 	 * Called when the activity is first created.
@@ -40,7 +46,18 @@ public class MainActivity extends MapActivity {
 		setContentView(R.layout.main);
 		MapView mapView = (MapView) findViewById(R.id.mapview);
 		mapView.setBuiltInZoomControls(true);
+		
+		
+		
+		List<Overlay> mapOverlays = mapView.getOverlays();
+		Drawable drawable = this.getResources().getDrawable(R.drawable.wlanmarker);
+		itemizedoverlay = new WlanItemizedOverlay(drawable, this);
+		
+		GeoPoint point = new GeoPoint(19240000,-99120000);
+		OverlayItem overlayitem = new OverlayItem(point, "Hola, Mundo!", "I'm in Mexico City!");
 
+		itemizedoverlay.addOverlay(overlayitem);
+		mapOverlays.add(itemizedoverlay);
 	}
 
 	public boolean switchState(View v) {
@@ -59,12 +76,14 @@ public class MainActivity extends MapActivity {
 	
 	public boolean syncMap(View v) {
 		Log.i(WlanLoggerConstants.TAG, "Sync Map with Data.");
-		Set<ScanResult> wlanList = collector.getOpenWlans().keySet();
+		itemizedoverlay.clear();
+		Map<CompareableScanResult, Location> wlanList = collector.getOpenWlans();
 		if(!wlanList.isEmpty()) {
 			addWlansToMap(wlanList);
 			Toast.makeText(getApplicationContext(),
 					"Open wlans added to the map.", Toast.LENGTH_LONG)
 					.show();
+			redrawMap();
 		} else {
 			Log.i(WlanLoggerConstants.TAG, "No openwlans in the set yet.");
 			Toast.makeText(getApplicationContext(),
@@ -74,14 +93,27 @@ public class MainActivity extends MapActivity {
 		return true;
 	}
 
-	private void addWlansToMap(Set<ScanResult> wlanList) {
+	private void redrawMap() {
+		MapView mapView = (MapView) findViewById(R.id.mapview);
+		mapView.postInvalidate();
+	}
+
+	private void addWlansToMap(Map<CompareableScanResult, Location> wlanList) {
 		StringBuilder stringBuilder = new StringBuilder();
 		stringBuilder.append("This Wlans: \n");
-		for (ScanResult scanResult : wlanList) {
-			stringBuilder.append("SSID: ").append(scanResult.SSID).append(",\n");
+		for (CompareableScanResult scanResult : wlanList.keySet()) {
+			stringBuilder.append("SSID: ").append(scanResult.getScanResult().SSID).append(",\n");
+			addWlanLocationToOverlay(wlanList, scanResult);
 		}
 		stringBuilder.append("got added to the map.");
 		Log.i(WlanLoggerConstants.TAG, stringBuilder.toString());
+	}
+
+	private void addWlanLocationToOverlay(Map<CompareableScanResult, Location> wlanList,
+			CompareableScanResult scanResult) {
+		Location location = wlanList.get(scanResult);
+		GeoPoint point = new GeoPoint((int) (location.getLatitude() * 1E6), (int) (location.getLongitude() * 1E6));
+		itemizedoverlay.addOverlay(new OverlayItem(point, scanResult.getScanResult().SSID, String.valueOf(scanResult.getScanResult().level)));
 	}
 
 	@Override
