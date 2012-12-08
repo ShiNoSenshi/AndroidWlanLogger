@@ -1,8 +1,17 @@
 package at.fhjoanneum.android;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
+
+import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
@@ -11,6 +20,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 import at.fhjoanneum.android.constants.WlanLoggerConstants;
+import at.fhjoanneum.android.utils.WlanMapXmlConverter;
 
 import com.google.android.maps.GeoPoint;
 import com.google.android.maps.MapActivity;
@@ -20,6 +30,7 @@ import com.google.android.maps.OverlayItem;
 
 public class MainActivity extends MapActivity {
 
+	private static final String FILENAME = "wlanLocations.xml";
 	private boolean isTrackingOn = false;
 	private WlanListenerThread wlanListener;
 	private OpenWlanCollector collector;
@@ -37,27 +48,22 @@ public class MainActivity extends MapActivity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+
 		setupWlanLogging();
-		
+
 		// Log a message (only on dev platform)
 		Log.i(WlanLoggerConstants.TAG, "onCreate");
 
 		setContentView(R.layout.main);
 		MapView mapView = (MapView) findViewById(R.id.mapview);
 		mapView.setBuiltInZoomControls(true);
-		
-		
-		
-		List<Overlay> mapOverlays = mapView.getOverlays();
-		Drawable drawable = this.getResources().getDrawable(R.drawable.wlanmarker);
-		itemizedoverlay = new WlanItemizedOverlay(drawable, this);
-		
-		GeoPoint point = new GeoPoint(19240000,-99120000);
-		OverlayItem overlayitem = new OverlayItem(point, "Hola, Mundo!", "I'm in Mexico City!");
 
-		itemizedoverlay.addOverlay(overlayitem);
+		List<Overlay> mapOverlays = mapView.getOverlays();
+		Drawable drawable = this.getResources().getDrawable(
+				R.drawable.wlanmarker);
+		itemizedoverlay = new WlanItemizedOverlay(drawable, this);
 		mapOverlays.add(itemizedoverlay);
+		loadData();
 	}
 
 	public boolean switchState(View v) {
@@ -73,22 +79,21 @@ public class MainActivity extends MapActivity {
 		isTrackingOn = !isTrackingOn;
 		return true;
 	}
-	
+
 	public boolean syncMap(View v) {
 		Log.i(WlanLoggerConstants.TAG, "Sync Map with Data.");
 		itemizedoverlay.clear();
-		Map<CompareableScanResult, Location> wlanList = collector.getOpenWlans();
-		if(!wlanList.isEmpty()) {
+		Map<CompareableScanResult, Location> wlanList = collector
+				.getOpenWlans();
+		if (!wlanList.isEmpty()) {
 			addWlansToMap(wlanList);
 			Toast.makeText(getApplicationContext(),
-					"Open wlans added to the map.", Toast.LENGTH_LONG)
-					.show();
+					"Open wlans added to the map.", Toast.LENGTH_LONG).show();
 			redrawMap();
 		} else {
 			Log.i(WlanLoggerConstants.TAG, "No openwlans in the set yet.");
-			Toast.makeText(getApplicationContext(),
-					"No open wlans found yet.", Toast.LENGTH_LONG)
-					.show();
+			Toast.makeText(getApplicationContext(), "No open wlans found yet.",
+					Toast.LENGTH_LONG).show();
 		}
 		return true;
 	}
@@ -102,18 +107,23 @@ public class MainActivity extends MapActivity {
 		StringBuilder stringBuilder = new StringBuilder();
 		stringBuilder.append("This Wlans: \n");
 		for (CompareableScanResult scanResult : wlanList.keySet()) {
-			stringBuilder.append("SSID: ").append(scanResult.getScanResult().SSID).append(",\n");
+			stringBuilder.append("SSID: ")
+					.append(scanResult.getSsid()).append(",\n");
 			addWlanLocationToOverlay(wlanList, scanResult);
 		}
 		stringBuilder.append("got added to the map.");
 		Log.i(WlanLoggerConstants.TAG, stringBuilder.toString());
 	}
 
-	private void addWlanLocationToOverlay(Map<CompareableScanResult, Location> wlanList,
+	private void addWlanLocationToOverlay(
+			Map<CompareableScanResult, Location> wlanList,
 			CompareableScanResult scanResult) {
 		Location location = wlanList.get(scanResult);
-		GeoPoint point = new GeoPoint((int) (location.getLatitude() * 1E6), (int) (location.getLongitude() * 1E6));
-		itemizedoverlay.addOverlay(new OverlayItem(point, scanResult.getScanResult().SSID, String.valueOf(scanResult.getScanResult().level)));
+		GeoPoint point = new GeoPoint((int) (location.getLatitude() * 1E6),
+				(int) (location.getLongitude() * 1E6));
+		itemizedoverlay.addOverlay(new OverlayItem(point, scanResult
+				.getSsid(), String.valueOf(scanResult
+				.getLevel())));
 	}
 
 	@Override
@@ -147,6 +157,53 @@ public class MainActivity extends MapActivity {
 			state = getString(R.string.on);
 		}
 		button.setText(state);
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		saveData();
+	}
+
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		saveData();
+	}
+
+	private void loadData() {
+		try {
+			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			DocumentBuilder db = dbf.newDocumentBuilder();
+			FileInputStream file = openFileInput(FILENAME);
+			if(file != null) {
+				Log.i(WlanLoggerConstants.TAG, "Load Data from file: "+FILENAME);
+				Document xml = db.parse(file);
+				collector.getOpenWlans().putAll(
+					WlanMapXmlConverter.convertXMLIntoMap(xml));
+			} else {
+				Log.i(WlanLoggerConstants.TAG, "No data do load yet.");
+			}
+		} catch (FileNotFoundException e) {
+			Log.w(WlanLoggerConstants.TAG, "No data do load yet.");
+		} catch (Exception e) {
+			Log.e(WlanLoggerConstants.TAG, "Error during Data loading.", e);
+		}
+	}
+
+	private void saveData() {
+		try {
+			Log.i(WlanLoggerConstants.TAG, "Save Data to file: "+FILENAME);
+			String xml = WlanMapXmlConverter.convertMapIntoXML(collector
+					.getOpenWlans());
+			Log.d(WlanLoggerConstants.TAG, "xml: "+xml);
+			FileOutputStream fos;
+			fos = openFileOutput(FILENAME, Context.MODE_PRIVATE);
+			fos.write(xml.getBytes());
+			fos.close();
+		} catch (Exception e) {
+			Log.e(WlanLoggerConstants.TAG, "Error during Data saving.", e);
+		}
 	}
 
 }

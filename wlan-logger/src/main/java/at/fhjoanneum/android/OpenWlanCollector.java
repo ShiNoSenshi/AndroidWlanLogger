@@ -81,7 +81,7 @@ public class OpenWlanCollector implements Runnable {
 	private boolean levelOfSavedWlanIsSmallerThenTheNewOne(
 			CompareableScanResult compareableScanResult,
 			CompareableScanResult listedWlan) {
-		return listedWlan.getScanResult().SSID.equals(compareableScanResult.getScanResult().SSID) && listedWlan.getScanResult().level < compareableScanResult.getScanResult().level;
+		return listedWlan.getSsid().equals(compareableScanResult.getSsid()) && listedWlan.getLevel() < compareableScanResult.getLevel();
 	}
 
 	private boolean wlanIsNew(CompareableScanResult compareableScanResult) {
