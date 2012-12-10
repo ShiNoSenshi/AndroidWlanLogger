@@ -81,7 +81,7 @@ public class WlanMapXmlConverter {
 		location.setLongitude(longitude);
 		location.setSpeed(speed);
 		location.setTime(time);
-		return null;
+		return location;
 	}
 
 
