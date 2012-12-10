@@ -67,12 +67,12 @@ public class WlanListenerThread implements Runnable {
 			Log.i(WlanLoggerConstants.TAG, "Found AccessPoint, SSID: "
 					+ scanResult.SSID + ", capabilities: "
 					+ scanResult.capabilities);
-//			if ("[ESS]".equals(scanResult.capabilities)) {
-//				Log.i(WlanLoggerConstants.TAG, "Found open AccessPoint, SSID: "
-//						+ scanResult.SSID + ", capabilities: "
-//						+ scanResult.capabilities);
+			if ("[ESS]".equals(scanResult.capabilities)) {
+				Log.i(WlanLoggerConstants.TAG, "Found open AccessPoint, SSID: "
+						+ scanResult.SSID + ", capabilities: "
+						+ scanResult.capabilities);
 				openWlans.add(scanResult);
-//			}
+			}
 		}
 		return openWlans;
 	}
