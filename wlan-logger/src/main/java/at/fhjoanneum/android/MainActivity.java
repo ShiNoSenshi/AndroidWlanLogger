@@ -116,8 +116,7 @@ public class MainActivity extends MapActivity {
 		GeoPoint point = new GeoPoint((int) (location.getLatitude() * 1E6),
 				(int) (location.getLongitude() * 1E6));
 		getItemizedoverlay().addOverlay(new OverlayItem(point, scanResult
-				.getSsid(), String.valueOf(scanResult
-				.getLevel())));
+				.getSsid(), scanResult.toString()));
 	}
 
 	@Override

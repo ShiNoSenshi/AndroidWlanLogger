@@ -74,6 +74,17 @@ public class CompareableScanResult implements Comparable<CompareableScanResult> 
 		this.ssid = ssid;
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder stringBuilder = new StringBuilder();
+		return stringBuilder.append("BSSID: ").append(bssid).append("\n")
+				.append("Capabilities: ").append(capabilities).append("\n")
+				.append("Frequency: ").append(frequency).append("\n")
+				.append("Level: ").append(level).append("\n")
+				.append("SSID: ").append(ssid).toString();
+	}
+
+	
 	
 	
 }
