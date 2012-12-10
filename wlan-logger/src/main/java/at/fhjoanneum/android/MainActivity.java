@@ -58,11 +58,6 @@ public class MainActivity extends MapActivity {
 		MapView mapView = (MapView) findViewById(R.id.mapview);
 		mapView.setBuiltInZoomControls(true);
 
-		List<Overlay> mapOverlays = mapView.getOverlays();
-		Drawable drawable = this.getResources().getDrawable(
-				R.drawable.wlanmarker);
-		itemizedoverlay = new WlanItemizedOverlay(drawable, this);
-		mapOverlays.add(itemizedoverlay);
 		loadData();
 	}
 
@@ -82,7 +77,6 @@ public class MainActivity extends MapActivity {
 
 	public boolean syncMap(View v) {
 		Log.i(WlanLoggerConstants.TAG, "Sync Map with Data.");
-		itemizedoverlay.clear();
 		Map<CompareableScanResult, Location> wlanList = collector
 				.getOpenWlans();
 		if (!wlanList.isEmpty()) {
@@ -121,7 +115,7 @@ public class MainActivity extends MapActivity {
 		Location location = wlanList.get(scanResult);
 		GeoPoint point = new GeoPoint((int) (location.getLatitude() * 1E6),
 				(int) (location.getLongitude() * 1E6));
-		itemizedoverlay.addOverlay(new OverlayItem(point, scanResult
+		getItemizedoverlay().addOverlay(new OverlayItem(point, scanResult
 				.getSsid(), String.valueOf(scanResult
 				.getLevel())));
 	}
@@ -179,8 +173,9 @@ public class MainActivity extends MapActivity {
 			if(file != null) {
 				Log.i(WlanLoggerConstants.TAG, "Load Data from file: "+FILENAME);
 				Document xml = db.parse(file);
-				collector.getOpenWlans().putAll(
-					WlanMapXmlConverter.convertXMLIntoMap(xml));
+				Map<CompareableScanResult, Location> savedMap = WlanMapXmlConverter.convertXMLIntoMap(xml);
+				Log.i(WlanLoggerConstants.TAG,	"loaded "+savedMap.size()+" AccessPoints.");
+				collector.getOpenWlans().putAll(savedMap);
 			} else {
 				Log.i(WlanLoggerConstants.TAG, "No data do load yet.");
 			}
@@ -205,5 +200,23 @@ public class MainActivity extends MapActivity {
 			Log.e(WlanLoggerConstants.TAG, "Error during Data saving.", e);
 		}
 	}
+	
+	private void addWlanOverlay() {
+		MapView mapView = (MapView) findViewById(R.id.mapview);
 
+		List<Overlay> mapOverlays = mapView.getOverlays();
+		Drawable drawable = this.getResources().getDrawable(
+				R.drawable.wlanmarker);
+		itemizedoverlay = new WlanItemizedOverlay(drawable, this);
+		mapOverlays.add(itemizedoverlay);
+	}
+
+	private WlanItemizedOverlay getItemizedoverlay() {
+		if (itemizedoverlay == null) {
+			addWlanOverlay();
+		}
+		return itemizedoverlay;
+	}
+
+	
 }
